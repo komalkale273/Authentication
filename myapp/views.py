@@ -10,6 +10,28 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
+from django.contrib import messages
+from django.core.exceptions import ValidationError
+import re
+
+
+def validate_password(password, username, email):
+    # Check if the password is too similar to the username or email
+    if username.lower() in password.lower() or email.split('@')[0].lower() in password.lower():
+        raise ValidationError("Your password can’t be too similar to your other personal information.")
+    
+    # Check if password is numeric
+    if password.isnumeric():
+        raise ValidationError("Your password can’t be entirely numeric.")
+    
+    # Check password length
+    if len(password) < 8:
+        raise ValidationError("Your password must contain at least 8 characters.")
+    
+    # Check for common passwords
+    common_passwords = ["password", "123456", "qwerty", "letmein"]
+    if password.lower() in common_passwords:
+        raise ValidationError("Your password can’t be a commonly used password.")
 
 # Home Page (Login Page)
 def login_view(request):
@@ -41,10 +63,17 @@ def signup_view(request):
             elif User.objects.filter(email=email).exists():
                 messages.error(request, "Email already registered")
             else:
-                user = User.objects.create_user(username=username, email=email, password=password)
-                user.save()
-                messages.success(request, "Account created successfully! Please log in.")
-                return redirect("login")
+                try:
+                    # Validate the password
+                    validate_password(password, username, email)
+
+                    # Create the user
+                    user = User.objects.create_user(username=username, email=email, password=password)
+                    user.save()
+                    messages.success(request, "Account created successfully! Please log in.")
+                    return redirect("login")
+                except ValidationError as e:
+                    messages.error(request, e.message)
         else:
             messages.error(request, "Passwords do not match")
 

@@ -28,6 +28,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+LLOGIN_REDIRECT_URL = "/dashboard/"  # OR name of the view in urls.py
+LOGOUT_REDIRECT_URL = ""
+
 
 # Application definition
 
