@@ -72,12 +72,12 @@
   </div>
 
   <script>
-    // Toggle password visibility for password field
+   
     const togglePassword = document.getElementById('togglePassword');
     const passwordField = document.getElementById('password');
 
     togglePassword.addEventListener('click', function () {
-      // Toggle the type of password field between text and password
+      
       if (passwordField.type === 'password') {
         passwordField.type = 'text';
         togglePassword.textContent = 'Hide';
@@ -87,12 +87,12 @@
       }
     });
 
-    // Toggle password visibility for confirm password field
+    
     const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
     const confirmPasswordField = document.getElementById('confirm_password');
 
     toggleConfirmPassword.addEventListener('click', function () {
-      // Toggle the type of confirm password field between text and password
+      
       if (confirmPasswordField.type === 'password') {
         confirmPasswordField.type = 'text';
         toggleConfirmPassword.textContent = 'Hide';
