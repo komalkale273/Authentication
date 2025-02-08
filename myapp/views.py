@@ -21,7 +21,7 @@ from django.contrib.auth import update_session_auth_hash
 from django.shortcuts import render, redirect
 from myapp.forms import CustomPasswordChangeForm
 
-# ✅ Password Validation Function
+
 def validate_password(password, username, email):
     if username.lower() in password.lower() or email.split('@')[0].lower() in password.lower():
         raise ValidationError("Your password can’t be too similar to your personal information.")
@@ -37,7 +37,7 @@ def validate_password(password, username, email):
         raise ValidationError("Your password can’t be a commonly used password.")
 
 
-# ✅ Login View
+
 def login_view(request):
     if request.method == "POST":
         username = request.POST.get("username")
@@ -53,7 +53,7 @@ def login_view(request):
     return render(request, "login.html")
 
 
-# ✅ Signup View
+
 def signup_view(request):
     if request.method == "POST":
         username = request.POST.get("username")
@@ -89,7 +89,7 @@ def logout_view(request):
     return redirect("login")
 
 
-# ✅ Send Password Reset Email Function
+
 def send_password_reset_email(request, user):
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)
@@ -114,7 +114,7 @@ def send_password_reset_email(request, user):
     send_mail(email_subject, email_body, settings.EMAIL_HOST_USER, [user.email], fail_silently=False)
 
 
-# ✅ Password Reset View
+
 class CustomPasswordResetView(PasswordResetView):
     template_name = "forget_password.html"  # ✅ Make sure this file exists!
     email_template_name = "password_reset_email.html"
@@ -132,7 +132,7 @@ class CustomPasswordResetView(PasswordResetView):
         return super().form_valid(form)
 
 
-# ✅ Forgot Password View
+
 def forget_password_view(request):
     if request.method == 'POST':
         email = request.POST.get('email')
@@ -148,7 +148,7 @@ def forget_password_view(request):
         return redirect('forget_password')
 
     return render(request, 'forget_password.html')
-# ✅ Reset Password View (Using Token)
+
 def reset_password_view(request, uidb64, token):  # Changed function name
     try:
         uid = urlsafe_base64_decode(uidb64).decode()
@@ -189,12 +189,11 @@ def change_password_view(request):
 
     return render(request, "change_password.html", {"form": form, "user_id": request.user.id})
 
-# ✅ Change Password View (Using
-# ✅ Profile View
+
 def profile_view(request):
     return render(request, 'profile.html')
 
 
-# ✅ Dashboard View
+
 def dashboard_view(request):
     return render(request, 'dashboard.html')
