@@ -1,3 +1,5 @@
 ﻿# Django Authentication Project
  ![image](https://github.com/user-attachments/assets/a5e0f88f-9d08-48cd-8204-0936ef49c171)
+ ![image](https://github.com/user-attachments/assets/005eabf5-4804-4845-aeef-bc0247874381)
+
 
