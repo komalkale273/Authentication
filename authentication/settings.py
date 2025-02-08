@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import os
+from django.urls import reverse_lazy
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -41,8 +43,15 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'authentication'
+    'authentication',
+    'crispy_forms',
+    'crispy_bootstrap4', 
+    'myapp'
 ]
+CRISPY_TEMPLATE_PACK = 'bootstrap4'
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap4"  
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
 
 EXTERNAL_APPS=[
     
@@ -126,8 +135,19 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
+LOGIN_URL = "/login/"
+LOGIN_REDIRECT_URL = "/dashboard/"  # Redirect after login
+LOGOUT_REDIRECT_URL = "/login/"  # Redirect after logout
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = "komalkale157@gmail.com"
+EMAIL_HOST_PASSWORD = 'zgon jjwy buls eaxf' # Use environment variables for security
+PASSWORD_RESET_TIMEOUT = 3600  # 1 day in seconds
+PASSWORD_RESET_CONFIRM_URL = reverse_lazy("password_reset_confirm")

@@ -1,39 +1,43 @@
-from django.shortcuts import render
-
-# Create your views here.
-# def index(request):
-#     return render(request, 'index.html')
+import uuid
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
-from django.contrib import messages
+from django.contrib.auth.views import PasswordResetView
 from django.contrib.auth.models import User
-from django.core.mail import send_mail
 from django.contrib import messages
+from django.core.mail import send_mail
 from django.core.exceptions import ValidationError
-import re
+from django.urls import reverse_lazy
+from django.contrib.sites.shortcuts import get_current_site
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes
+from django.contrib.auth.tokens import default_token_generator
+from django.conf import settings
+from django.template.loader import render_to_string
+from .models import Profile  # Ensure Profile model exists
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth import update_session_auth_hash
+from django.shortcuts import render, redirect
+from myapp.forms import CustomPasswordChangeForm
 
-
+# ✅ Password Validation Function
 def validate_password(password, username, email):
-    # Check if the password is too similar to the username or email
     if username.lower() in password.lower() or email.split('@')[0].lower() in password.lower():
-        raise ValidationError("Your password can’t be too similar to your other personal information.")
+        raise ValidationError("Your password can’t be too similar to your personal information.")
     
-    # Check if password is numeric
     if password.isnumeric():
         raise ValidationError("Your password can’t be entirely numeric.")
     
-    # Check password length
     if len(password) < 8:
         raise ValidationError("Your password must contain at least 8 characters.")
     
-    # Check for common passwords
     common_passwords = ["password", "123456", "qwerty", "letmein"]
     if password.lower() in common_passwords:
         raise ValidationError("Your password can’t be a commonly used password.")
 
-# Home Page (Login Page)
+
+# ✅ Login View
 def login_view(request):
     if request.method == "POST":
         username = request.POST.get("username")
@@ -42,14 +46,14 @@ def login_view(request):
 
         if user is not None:
             login(request, user)
-            return redirect("dashboard")  # Redirect to Dashboard after login
+            return redirect("dashboard")
         else:
             messages.error(request, "Invalid username or password")
 
     return render(request, "login.html")
 
 
-# Sign Up Page
+# ✅ Signup View
 def signup_view(request):
     if request.method == "POST":
         username = request.POST.get("username")
@@ -64,10 +68,7 @@ def signup_view(request):
                 messages.error(request, "Email already registered")
             else:
                 try:
-                    # Validate the password
                     validate_password(password, username, email)
-
-                    # Create the user
                     user = User.objects.create_user(username=username, email=email, password=password)
                     user.save()
                     messages.success(request, "Account created successfully! Please log in.")
@@ -80,61 +81,120 @@ def signup_view(request):
     return render(request, "signup.html")
 
 
-# Forgot Password Page
-def forgot_password_view(request):
-    if request.method == "POST":
-        email = request.POST.get("email")
-        user = User.objects.filter(email=email).first()
-
-        if user:
-            # Simulating a password reset link
-            reset_link = "http://127.0.0.1:8000/reset-password/"
-            send_mail(
-                "Password Reset Request",
-                f"Click the link to reset your password: {reset_link}",
-                "admin@example.com",
-                [email],
-                fail_silently=False,
-            )
-            messages.success(request, "Password reset instructions have been sent to your email")
-        else:
-            messages.error(request, "No user found with this email")
-
-    return render(request, "forgot_password.html")
 
 
-# Change Password Page (Only accessible if logged in)
-@login_required
-def change_password_view(request):
-    if request.method == "POST":
-        form = PasswordChangeForm(request.user, request.POST)
-        if form.is_valid():
-            user = form.save()
-            update_session_auth_hash(request, user)  # Keeps the user logged in
-            messages.success(request, "Your password was successfully updated!")
-            return redirect("dashboard")
-        else:
-            messages.error(request, "Please correct the error below.")
-    else:
-        form = PasswordChangeForm(request.user)
-
-    return render(request, "change_password.html", {"form": form})
-
-
-# Dashboard (Only accessible if logged in)
-@login_required
-def dashboard_view(request):
-    return render(request, "dashboard.html", {"user": request.user})
-
-
-# Profile Page (Only accessible if logged in)
-@login_required
-def profile_view(request):
-    return render(request, "profile.html", {"user": request.user})
-
-
-# Logout User
 @login_required
 def logout_view(request):
     logout(request)
     return redirect("login")
+
+
+# ✅ Send Password Reset Email Function
+def send_password_reset_email(request, user):
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    token = default_token_generator.make_token(user)
+    domain = get_current_site(request).domain
+    protocol = "https" if request.is_secure() else "http"
+
+    reset_link = f"{protocol}://{domain}/reset-password/{uid}/{token}/"
+
+    email_subject = "Password Reset Request"
+    email_body = f"""
+    Hello {user.username},
+
+    You requested a password reset. Click the link below to reset your password:
+
+    {reset_link}
+
+    If you didn't request this, please ignore this email.
+
+    Thanks!
+    """
+
+    send_mail(email_subject, email_body, settings.EMAIL_HOST_USER, [user.email], fail_silently=False)
+
+
+# ✅ Password Reset View
+class CustomPasswordResetView(PasswordResetView):
+    template_name = "forget_password.html"  # ✅ Make sure this file exists!
+    email_template_name = "password_reset_email.html"
+    success_url = reverse_lazy("password_reset_done")
+
+    
+    def form_valid(self, form):
+        email = form.cleaned_data["email"]
+        users = User.objects.filter(email=email)
+
+        if users.exists():
+            for user in users:
+                send_password_reset_email(self.request, user)
+
+        return super().form_valid(form)
+
+
+# ✅ Forgot Password View
+def forget_password_view(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        user = User.objects.filter(email=email).first()
+
+        if not user:
+            messages.error(request, 'No user found with this email.')
+            return redirect('forget_password')
+
+        send_password_reset_email(request, user)  # Send reset email
+
+        messages.success(request, 'An email has been sent with password reset instructions.')
+        return redirect('forget_password')
+
+    return render(request, 'forget_password.html')
+# ✅ Reset Password View (Using Token)
+def reset_password_view(request, uidb64, token):  # Changed function name
+    try:
+        uid = urlsafe_base64_decode(uidb64).decode()
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+
+    if user is not None and default_token_generator.check_token(user, token):
+        if request.method == 'POST':
+            new_password = request.POST.get('new_password')
+            confirm_password = request.POST.get('confirm_password')
+
+            if new_password != confirm_password:
+                messages.error(request, "Passwords do not match.")
+                return render(request, 'change_password.html', {"valid": True})
+
+            user.set_password(new_password)
+            user.save()
+
+            messages.success(request, "Password changed successfully. You can now log in.")
+            return redirect('login')
+    else:
+        messages.error(request, "Invalid or expired token.")
+        return redirect('forget_password')
+
+    return render(request, 'change_password.html', {"valid": True})
+@login_required
+@login_required
+def change_password_view(request):
+    if request.method == "POST":
+        form = CustomPasswordChangeForm(user=request.user, data=request.POST)
+        if form.is_valid():
+            user = form.save()
+            update_session_auth_hash(request, user)  # Prevents logout after password change
+            return redirect("dashboard")  # Redirect after successful change
+    else:
+        form = CustomPasswordChangeForm(user=request.user)
+
+    return render(request, "change_password.html", {"form": form, "user_id": request.user.id})
+
+# ✅ Change Password View (Using
+# ✅ Profile View
+def profile_view(request):
+    return render(request, 'profile.html')
+
+
+# ✅ Dashboard View
+def dashboard_view(request):
+    return render(request, 'dashboard.html')

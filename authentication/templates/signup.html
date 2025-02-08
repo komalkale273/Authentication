@@ -20,7 +20,14 @@
 
       <div class="form-group">
         <label for="password">Password</label>
-        <input type="password" name="password" id="password" class="form-control" required>
+        <div class="input-group">
+          <input type="password" name="password" id="password" class="form-control" required>
+          <div class="input-group-append">
+            <button type="button" class="btn btn-outline-secondary" id="togglePassword">
+              Show
+            </button>
+          </div>
+        </div>
         <small class="form-text text-muted">
           <ul>
             <li>Your password must contain at least 8 characters.</li>
@@ -33,21 +40,26 @@
 
       <div class="form-group">
         <label for="confirm_password">Confirm Password</label>
-        <input type="password" name="confirm_password" id="confirm_password" class="form-control" required>
+        <div class="input-group">
+          <input type="password" name="confirm_password" id="confirm_password" class="form-control" required>
+          <div class="input-group-append">
+            <button type="button" class="btn btn-outline-secondary" id="toggleConfirmPassword">
+              Show
+            </button>
+          </div>
+        </div>
       </div>
 
       <button type="submit" class="btn btn-primary">Sign Up</button>
     </form>
-<style>
-    .form-text {
-        background-color: lightyellow;
-        border: 1px solid yellow;
-    }
-    
 
-</style>
+    <style>
+        .form-text {
+            background-color: lightyellow;
+            border: 1px solid yellow;
+        }
+    </style>
 
- 
     {% if messages %}
       <div class="mt-3">
         {% for message in messages %}
@@ -58,4 +70,36 @@
       </div>
     {% endif %}
   </div>
+
+  <script>
+    // Toggle password visibility for password field
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordField = document.getElementById('password');
+
+    togglePassword.addEventListener('click', function () {
+      // Toggle the type of password field between text and password
+      if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        togglePassword.textContent = 'Hide';
+      } else {
+        passwordField.type = 'password';
+        togglePassword.textContent = 'Show';
+      }
+    });
+
+    // Toggle password visibility for confirm password field
+    const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
+    const confirmPasswordField = document.getElementById('confirm_password');
+
+    toggleConfirmPassword.addEventListener('click', function () {
+      // Toggle the type of confirm password field between text and password
+      if (confirmPasswordField.type === 'password') {
+        confirmPasswordField.type = 'text';
+        toggleConfirmPassword.textContent = 'Hide';
+      } else {
+        confirmPasswordField.type = 'password';
+        toggleConfirmPassword.textContent = 'Show';
+      }
+    });
+  </script>
 {% endblock %}
